@@ -5,13 +5,23 @@
 
 <hibernate-configuration>
     <session-factory>
+        <!-- Драйвер и подключение к PostgreSQL -->
         <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>
         <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/user_service_db</property>
         <property name="hibernate.connection.username">user_service_user</property>
         <property name="hibernate.connection.password">your_password</property>
 
+        <!-- Диалект PostgreSQL -->
         <property name="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</property>
+
+        <!-- Настройки отображения SQL -->
         <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+
+        <!-- Автоматическое создание/обновление таблиц -->
         <property name="hibernate.hbm2ddl.auto">update</property>
+
+        <!-- Кэш и транзакции (по умолчанию) -->
+        <property name="hibernate.current_session_context_class">thread</property>
     </session-factory>
 </hibernate-configuration>
