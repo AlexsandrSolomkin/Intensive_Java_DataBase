@@ -1,9 +1,11 @@
 package dao;
 
+import com.github.dockerjava.api.DockerClient;
 import entity.User;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.junit.jupiter.api.*;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -19,7 +21,13 @@ class UserDaoImplIT {
     private static UserDao userDao;
     private static SessionFactory sessionFactory;
 
-    // Создаем контейнер PostgreSQL для тестов
+    static {
+        // Настройка подключения к Docker через Npipe (Windows)
+        System.setProperty("DOCKER_HOST", "npipe:////./pipe/docker_engine");
+        System.setProperty("DOCKER_TLS_VERIFY", "false");
+    }
+
+    // Контейнер PostgreSQL для тестов
     @Container
     public static PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("test_db")
@@ -28,7 +36,7 @@ class UserDaoImplIT {
 
     @BeforeAll
     static void setUp() {
-        System.out.println("DOCKER_HOST=" + System.getenv("DOCKER_HOST"));
+        System.out.println("DOCKER_HOST=" + System.getProperty("DOCKER_HOST"));
 
         // Настраиваем Hibernate на контейнер
         Configuration configuration = new Configuration();
@@ -55,7 +63,6 @@ class UserDaoImplIT {
 
     @Test
     void testCreateReadUpdateDeleteUser() {
-        // CREATE
         User user = new User();
         user.setName("Test User");
         user.setEmail("test@example.com");
@@ -64,27 +71,23 @@ class UserDaoImplIT {
         userDao.create(user);
         assertNotNull(user.getId(), "User ID should be assigned after creation");
 
-        // READ
         User fetchedUser = userDao.read(user.getId());
         assertEquals("Test User", fetchedUser.getName());
         assertEquals("test@example.com", fetchedUser.getEmail());
         assertEquals(30, fetchedUser.getAge());
 
-        // UPDATE
         fetchedUser.setAge(35);
         userDao.update(fetchedUser);
 
         User updatedUser = userDao.read(fetchedUser.getId());
         assertEquals(35, updatedUser.getAge());
 
-        // DELETE
         userDao.delete(updatedUser);
         assertNull(userDao.read(updatedUser.getId()));
     }
 
     @Test
     void testReadAllUsers() {
-        // Создаем несколько пользователей
         User user1 = new User();
         user1.setName("User 1");
         user1.setEmail("u1@example.com");
@@ -100,5 +103,12 @@ class UserDaoImplIT {
 
         List<User> users = userDao.readAll();
         assertTrue(users.size() >= 2, "There should be at least 2 users in DB");
+    }
+
+    @Test
+    void testDockerConnection() {
+        DockerClient client = DockerClientFactory.instance().client();
+        System.out.println("Docker version: " + client.versionCmd().exec().getVersion());
+        assertNotNull(client.versionCmd().exec().getVersion(), "Docker version should not be null");
     }
 }
