@@ -1,120 +1,53 @@
-# User Service (Intensive_Java_DataBase_New)
+User Service
 
-Консольное Java-приложение для управления пользователями (CRUD) с использованием Hibernate и PostgreSQL.  
-Проект реализован без Spring, с использованием DAO-паттерна и транзакционности.
+Микросервис для управления пользователями.
+При добавлении или удалении пользователя отправляет сообщение в Kafka.
 
----
-
-## Оглавление
-- [Требования](#требования)
-- [Установка и настройка](#установка-и-настройка)
-- [Запуск проекта](#запуск-проекта)
-- [Использование](#использование)
-- [Структура проекта](#структура-проекта)
-- [Логирование](#логирование)
-- [Технические детали](#технические-детали)
-
----
-
-## Требования
-- JDK 17+
+Требования:
+- Java 17+
 - Maven
-- PostgreSQL (рекомендуется версия 12+)
-- Подключение к базе PostgreSQL с созданной базой и пользователем (см. ниже)
+- PostgreSQL
+- Kafka (локальный брокер на localhost:9092)
 
----
+Настройка базы данных:
+1. Создайте базу данных и пользователя PostgreSQL:
 
-## Установка и настройка
+CREATE DATABASE user_service_db;
+CREATE USER user_service_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE user_service_db TO user_service_user;
 
-1. **Установка PostgreSQL**
+2. Таблица "users" будет создана автоматически при запуске приложения.
 
-    Скачать и установить PostgreSQL с официального сайта:  
-    https://www.postgresql.org/download/
+Настройка Kafka:
+- Kafka должен быть запущен на localhost:9092.
+- Топик "user-events" создается автоматически или вручную:
 
-2. **Создание базы и пользователя**
+kafka-topics.sh --create --topic user-events --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1
 
-    В psql или PgAdmin выполнить команды (замените имена и пароль на свои):
+Запуск приложения:
+1. Перейдите в директорию user-service.
+2. Выполните команду:
 
-    ```sql
-    CREATE DATABASE user_service_db;
-    CREATE USER user_service_user WITH ENCRYPTED PASSWORD 'password';
-    GRANT ALL PRIVILEGES ON DATABASE user_service_db TO user_service_user;
-3. **Настройка hibernate.cfg.xml**
+mvn spring-boot:run
 
-    В проекте в src/main/resources/hibernate.cfg.xml проверьте параметры подключения:
+3. Приложение будет доступно на http://localhost:8080.
 
-    ```
-    <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/user_service_db</property>
-    <property name="hibernate.connection.username">user_service_user</property>
-    <property name="hibernate.connection.password">password</property>
-    ```
-   
-    Убедитесь, что параметры соответствуют вашей базе.
+API:
 
-4. **Сборка проекта**
+Создать пользователя:
+POST /users
+Content-Type: application/json
 
-    В терминале, находясь в корне проекта, выполните:
+{
+"name": "Иван",
+"email": "ivan@example.com",
+"age": 25
+}
 
-    ```
-    mvn clean package
-    ```
+Удалить пользователя:
+DELETE /users/{id}
 
-    Это скачает все зависимости и соберёт jar.
+> При этих операциях отправляются сообщения в Kafka в топик "user-events".
 
----
-
-## Запуск проекта
-
-   Вы можете запустить проект из IDE, вызвав класс Main с методом main.
-
-   Или из консоли:
-   ```
-   java -cp target/Intensive_Java_DataBase_New-1.0-SNAPSHOT.jar;путь_к_зависимостям/* Main
-   ```
-   В Windows в качестве разделителя путей используйте ;, в Linux/macOS — :.
-
----
-
-## Использование
-
-   После запуска в консоли появится меню:
-   ```
-   --- User Service Menu ---
-   1. Create User
-   2. Read User
-   3. Update User
-   4. Delete User
-   5. Exit
-   Choose an option:
-   ```
-
-- Введите номер нужного действия и нажмите Enter.
-- Следуйте подсказкам (вводите имя, email, возраст и т.д.).
-- Для выхода выберите пункт 5.
-
----
-
-## Структура проекта
-
-- entity — класс User, описывает сущность пользователя.
-- dao — реализация интерфейса для работы с базой данных (CRUD).
-- service — бизнес-логика приложения.
-- menu — классы для взаимодействия с пользователем через консоль.
-- util — классы для настройки Hibernate.
-
----
-
-## Логирование
-
-   Для логирования используется SLF4J с Log4j. Конфигурация в файле src/main/resources/log4j.properties.
-   Выводит информацию об ошибках и основных действиях.
-
----
-
-## Технические детали
-
-- Hibernate ORM 6.3.0.Final 
-- PostgreSQL JDBC Driver 42.6.0 
-- Java Persistence API (Jakarta Persistence)
-- Maven для управления зависимостями и сборки 
-- JDK 17+
+Проверка Kafka:
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic user-events --from-beginning
