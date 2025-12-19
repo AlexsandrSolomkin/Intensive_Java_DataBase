@@ -1,28 +1,21 @@
-package org.example.userservice.entity;
-
-import jakarta.persistence.*;
+package org.example.userservice.dto;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "users")
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class UserDto {
     private Long id;
-
     private String name;
     private String email;
     private Integer age;
     private LocalDateTime createdAt;
 
-    public User() {}
-
-    public User(String name, String email, Integer age) {
+    public UserDto() {}
+    public UserDto(Long id, String name, String email, Integer age, LocalDateTime createdAt) {
+        this.id = id;
         this.name = name;
         this.email = email;
         this.age = age;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = createdAt;
     }
 
     // Getters и Setters
